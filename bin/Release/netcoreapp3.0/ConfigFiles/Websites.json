@@ -1,0 +1,20 @@
+[
+  {
+    "ID": 1,
+    "WebsiteLink": "https://www.youtube.com/watch?v=WzI9-rFNkic",
+    "FindRegex": "(\\{\\\\\\\"viewCount\\\\\\\":\\{\\\\\\\"runs\\\\\\\":\\[\\{\\\\\\\"text\\\\\\\":\\\\\\\")(\\d+.*)( watching now\\\\\\\"\\}\\]\\},\\\\\\\"isLive\\\\\\\":true})",
+    "Match": 2,
+    "Remark": "Live Satsant Samuh Sibir- Katha",
+    "RefreshTime": 5000,
+    "MaxViewerCount": 10
+  },
+  {
+    "ID": 2,
+    "WebsiteLink": "https://www.youtube.com/watch?v=WzI9-rFNkic",
+    "FindRegex": "(\\{\\\\\\\"viewCount\\\\\\\":\\{\\\\\\\"runs\\\\\\\":\\[\\{\\\\\\\"text\\\\\\\":\\\\\\\")(\\d+.*)( watching now\\\\\\\"\\}\\]\\},\\\\\\\"isLive\\\\\\\":true})",
+    "Match": 2,
+    "Remark": "Live Satsant Samuh Sibir- Katha",
+    "RefreshTime": 5000,
+    "MaxViewerCount": 50
+  }
+]
