@@ -72,9 +72,9 @@ namespace HtmlGrabber.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] Icon {
+        internal static byte[] Grab_37060 {
             get {
-                object obj = ResourceManager.GetObject("Icon", resourceCulture);
+                object obj = ResourceManager.GetObject("Grab_37060", resourceCulture);
                 return ((byte[])(obj));
             }
         }

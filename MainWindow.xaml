@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HtmlGrabber"
         mc:Ignorable="d"
-        Title="Html Grabber" Height="600" Width="1024" Loaded="Window_Loaded" ResizeMode="CanMinimize" Closed="Window_Closed" >
+        Title="Html Grabber" Height="600" Width="1024" Loaded="Window_Loaded" ResizeMode="CanMinimize" Closed="Window_Closed" Closing="Window_Closing" WindowStartupLocation="CenterScreen" >
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="161*"/>
@@ -19,31 +19,46 @@
         <GroupBox Header=" Configure Website " Margin="10,43,10,0" Grid.RowSpan="2">
             <StackPanel>
                 <Label Content="Website Link : "/>
-                <TextBox x:Name="txtWebsiteLink" TextWrapping="Wrap" Height="26" VerticalContentAlignment="Center" Text="https://www.youtube.com/watch?v=UgBmM8Rfrvk"/>
-                <Label Content="Find Regex : "/>
-                <TextBox x:Name="txtFindRegex" TextWrapping="Wrap" Height="26" VerticalContentAlignment="Center" Text="(\{\\\&quot;viewCount\\\&quot;:\{\\\&quot;runs\\\&quot;:\[\{\\\&quot;text\\\&quot;:\\\&quot;)(\d+.*)( watching now\\\&quot;\}\]\},\\\&quot;isLive\\\&quot;:true})"/>
-                <StackPanel Height="26" Orientation="Horizontal">
-                    <Label Content="Match : " Height="26" Width="208"/>
-                    <Label Content="Refresh Time : " Height="26" Width="200"/>
-                </StackPanel>
-                <StackPanel Height="36" Orientation="Horizontal">
-                    <TextBox x:Name="txtMatch" TextWrapping="Wrap" VerticalContentAlignment="Center" Height="26" Margin="0,0,10,0" Width="200" Text="2"/>
-                    <TextBox x:Name="txtRefreshTime" TextWrapping="Wrap" VerticalContentAlignment="Center" Height="26" Margin="0,0,10,0" Width="200" Text="5"/>
-                </StackPanel>
+                <TextBox x:Name="txtWebsiteLink" TextWrapping="Wrap" Height="26" VerticalContentAlignment="Center" Text="https://xyzabc.com"/>
                 <Label Content="Remark : " RenderTransformOrigin="0.102,0.502"/>
                 <TextBox x:Name="txtRemark" TextWrapping="Wrap" Height="26" VerticalContentAlignment="Center" Text="Katha"/>
 
-                <Button x:Name="BtnSave" Content="Add to Watch List" Click="BtnSave_Click" Height="26" Width="138" HorizontalAlignment="Left" Margin="0,10,0,0"/>
+                <Label Content="Find Regex : "/>
+                <TextBox x:Name="txtFindRegex" TextWrapping="Wrap" Height="26" VerticalContentAlignment="Center" Text="(\{\\\&quot;viewCount\\\&quot;:\{\\\&quot;runs\\\&quot;:\[\{\\\&quot;text\\\&quot;:\\\&quot;)(\d+.*)( watching now\\\&quot;\}\]\},\\\&quot;isLive\\\&quot;:true})"/>
+                <StackPanel Height="26" Orientation="Horizontal">
+                    <Label Content="Match : " Height="26" Width="125"/>
+                    <Label Content="Refresh Time : " Height="26" Width="125"/>
+                    <Label Content="Retry Count : " Height="26" Width="125"/>
+                </StackPanel>
+                <StackPanel Height="36" Orientation="Horizontal">
+                    <TextBox x:Name="txtMatch" TextWrapping="Wrap" VerticalContentAlignment="Center" Height="26" Margin="0,0,10,0" Width="120" Text="2"/>
+                    <TextBox x:Name="txtRefreshTime" TextWrapping="Wrap" VerticalContentAlignment="Center" Height="26" Margin="0,0,10,0" Width="120" Text="5"/>
+                    <TextBox x:Name="txtRetryCount" TextWrapping="Wrap" VerticalContentAlignment="Center" Height="26" Margin="0,0,10,0" Width="120" Text="5"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Height="36" VerticalAlignment="Center" >
+                    <Button x:Name="BtnSave" Content="Add to Watch List" Click="BtnSave_Click" Height="26" Width="138" HorizontalAlignment="Left" Margin="0,0,10,0" />
+                    <Label x:Name="LbStatus" Content="Message" Height="26" Visibility="Hidden"/>
+                </StackPanel>
+              
+
             </StackPanel>
         </GroupBox>
-        <GroupBox Header=" Website List " Grid.Row="2" Margin="10,0,10,10">
-            <StackPanel>
+        <GroupBox Header=" Website List " Grid.Row="2" Grid.ColumnSpan="2" Margin="10,0,10,10">
+            <StackPanel Margin="0,5,0,0">
                 <StackPanel >
-                    <DataGrid x:Name="dataGridWebsiteList" MinWidth="200" Height="171" />
+                    <DataGrid x:Name="dataGridWebsiteList" MinWidth="200" Height="168" PreviewKeyDown="DataGridWebsiteList_PreviewKeyDown" >
+                        <DataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Start" Click="MenuItem_Start_Click"></MenuItem>
+                                <MenuItem Header="Stop" Click="MenuItem_Stop_Click"></MenuItem>
+                                <MenuItem Header="Delete" Click="MenuItem_Delete_Click"></MenuItem>                                
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
+                    </DataGrid>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
                     <Button x:Name="BtnExport" Content="Export to csv" Click="BtnExport_Click" Height="26" Width="97" Margin="0,5,0,0" HorizontalAlignment="Left"/>
-                    <Label Content="Total Viwers : " Margin="15,5,0,0"/>
+                    <Label Content="Total Viewers : " Margin="15,5,0,0"/>
                     <Label x:Name="LbTotalViewers" Content="0" Margin="5,5,0,0"/>
                 </StackPanel>
                
@@ -56,15 +71,7 @@
             <Label Content="Live History" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
         </StackPanel>
-        <StackPanel Grid.Column="1" Grid.Row="2" Margin="0,0,10,0">
-            <StackPanel Height="44" Background="#FFFFF7C8">
-                <Label Content="Active Connection" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </StackPanel>
-
-            <StackPanel Height="195">
-                <DataGrid/>
-            </StackPanel>
-        </StackPanel>
+        <StackPanel Grid.Column="1" Grid.Row="2" Margin="0,0,10,0"/>
         <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,0,10,0">
             <StackPanel Height="226" Margin="0,10,0,10">
                 <DataGrid x:Name="DataGridHistory" Height="224"/>

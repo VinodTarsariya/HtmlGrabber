@@ -4,7 +4,6 @@ C:\Users\Administrator\source\repos\HtmlGrabber\bin\Debug\netcoreapp3.0\HtmlGrab
 C:\Users\Administrator\source\repos\HtmlGrabber\bin\Debug\netcoreapp3.0\HtmlGrabber.runtimeconfig.dev.json
 C:\Users\Administrator\source\repos\HtmlGrabber\bin\Debug\netcoreapp3.0\HtmlGrabber.dll
 C:\Users\Administrator\source\repos\HtmlGrabber\bin\Debug\netcoreapp3.0\HtmlGrabber.pdb
-C:\Users\Administrator\source\repos\HtmlGrabber\obj\Debug\netcoreapp3.0\HtmlGrabber.csprojAssemblyReference.cache
 C:\Users\Administrator\source\repos\HtmlGrabber\obj\Debug\netcoreapp3.0\MainWindow.g.cs
 C:\Users\Administrator\source\repos\HtmlGrabber\obj\Debug\netcoreapp3.0\App.g.cs
 C:\Users\Administrator\source\repos\HtmlGrabber\obj\Debug\netcoreapp3.0\HtmlGrabber_MarkupCompile.cache
@@ -21,3 +20,4 @@ C:\Users\Administrator\source\repos\HtmlGrabber\bin\Debug\netcoreapp3.0\Newtonso
 C:\Users\Administrator\source\repos\HtmlGrabber\obj\Debug\netcoreapp3.0\HtmlGrabber.csproj.CopyComplete
 C:\Users\Administrator\source\repos\HtmlGrabber\bin\Debug\netcoreapp3.0\ConfigFiles\Websites.json
 C:\Users\Administrator\source\repos\HtmlGrabber\obj\Debug\netcoreapp3.0\HtmlGrabber_Content.g.cs
+C:\Users\Administrator\Source\Repos\HtmlGrabber\obj\Debug\netcoreapp3.0\HtmlGrabber.csprojAssemblyReference.cache

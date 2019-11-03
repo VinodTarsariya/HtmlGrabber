@@ -121,8 +121,8 @@
     <value>(\{\\\"viewCount\\\":\{\\\"runs\\\":\[\{\\\"text\\\":\\\")(\d+.*)( watching now\\\"\}\]\},\\\"isLive\\\":true})</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Icon.ico;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="Grab_37060" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Grab_37060.ico;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="ReplaceRegex" xml:space="preserve">
     <value>$2</value>
