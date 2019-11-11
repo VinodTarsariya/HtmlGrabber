@@ -25,33 +25,119 @@ namespace HtmlGrabber
     public partial class MainWindow : Window
     {
         private string WebsiteJsonFile = AppDomain.CurrentDomain.BaseDirectory + "ConfigFiles\\Websites.json";
+        private string LogPath = AppDomain.CurrentDomain.BaseDirectory + "Log";
         private static DataTable dtLiveHistory = new DataTable();
         private static DataTable dtWebsiteList = new DataTable();
         private static bool isWebsiteLinkCheckingTaskRunning = false;
         private static bool isRightWebsiteLink = false;
         Dictionary<string, Thread> threadDictionary = new Dictionary<string, Thread>();
-        
+        private static int autoLogdeletedays = 7;
+        private static bool isAutoLogdeleteEnable = true;
+        private static bool isAutoLogSaveEnable = true;
+        private ErrorHandle clsLogger = new ErrorHandle();
         public MainWindow()
         {
             InitializeComponent();
 
-            dtWebsiteList.Columns.Add("Remark", typeof(string));
-            dtWebsiteList.Columns.Add("Live Viewers", typeof(int));
-            dtWebsiteList.Columns.Add("Max Viwers", typeof(int));
-            dtWebsiteList.Columns.Add("Status", typeof(string));
-            dtWebsiteList.Columns.Add("Refresh Time", typeof(int));
-            dtWebsiteList.Columns.Add("Match", typeof(int));
-            dtWebsiteList.Columns.Add("Retry Count", typeof(int));
-            dtWebsiteList.Columns.Add("Website Link", typeof(string));
-            dtWebsiteList.Columns.Add("Find Regex", typeof(string));
+            try
+            {
+                clsLogger.WriteToLogFile("Initialization of Main Window started.");
+                dtWebsiteList.Columns.Add("Remark", typeof(string));
+                dtWebsiteList.Columns.Add("Live Viewers", typeof(int));
+                dtWebsiteList.Columns.Add("Max Viwers", typeof(int));
+                dtWebsiteList.Columns.Add("Status", typeof(string));
+                dtWebsiteList.Columns.Add("Refresh Time", typeof(int));
+                dtWebsiteList.Columns.Add("Match", typeof(int));
+                dtWebsiteList.Columns.Add("Retry Count", typeof(int));
+                dtWebsiteList.Columns.Add("Website Link", typeof(string));
+                dtWebsiteList.Columns.Add("Find Regex", typeof(string));
+                dtWebsiteList.Columns.Add("TStatus", typeof(string));
+
+                dtLiveHistory.Columns.Add("Remark", typeof(string));
+                dtLiveHistory.Columns.Add("Live Viewers", typeof(int));
+                dtLiveHistory.Columns.Add("Date_Time", typeof(DateTime));
+                DataGridHistory.ItemsSource = dtLiveHistory.DefaultView;
+                dataGridWebsiteList.ItemsSource = dtWebsiteList.DefaultView;
+
+                Thread LogDeleteThread = new Thread(() => DeleteLog());
+                LogDeleteThread.Name = "DeleteLog";
+                LogDeleteThread.Start();
+
+                Thread AutoLogSaveThread = new Thread(() => AutoLogSave());
+                AutoLogSaveThread.Name = "AutoLogSave";
+                AutoLogSaveThread.Start();
+                clsLogger.WriteToLogFile("Initialization of Main Window Finished.");
+
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error in initialization of Main Window : " + ex.Message);
+
+            }
 
 
-            dtLiveHistory.Columns.Add("Remark", typeof(string));
-            dtLiveHistory.Columns.Add("Live Viewers", typeof(int));
-            dtLiveHistory.Columns.Add("Date_Time", typeof(DateTime));
+        }
 
-            DataGridHistory.ItemsSource = dtLiveHistory.DefaultView;
-            dataGridWebsiteList.ItemsSource = dtWebsiteList.DefaultView;
+
+
+        private void AutoLogSave()
+        {
+            while (isAutoLogSaveEnable)
+            {
+                try
+                {
+                    clsLogger.WriteToLogFile("Autolog saving started.");
+                    if (dtWebsiteList.Rows.Count > 0)
+                    {
+                        string fileName = LogPath + "\\" + "summary_" + DateTime.Now.ToString("HHmm dd-MM-yyyy") + ".csv";
+                        dtWebsiteList.ToCSV(fileName);
+                    }
+                    if (dtLiveHistory.Rows.Count > 0)
+                    {
+                        string fileName = LogPath + "\\" + "history_" + DateTime.Now.ToString("HHmm dd-MM-yyyy") + ".csv";
+                        dtLiveHistory.ToCSV(fileName);
+                    }
+                    Thread.Sleep(300000);
+                    clsLogger.WriteToLogFile("Autolog saving finished.");
+
+                }
+                catch (Exception ex)
+                {
+                    clsLogger.WriteToLogFile("Error during auto log saving: " + ex.Message);
+                }
+
+            }
+
+
+        }
+
+        private void DeleteLog()
+        {
+            while (isAutoLogdeleteEnable)
+            {
+                try
+                {
+                    clsLogger.WriteToLogFile("Autolog delete started.");
+
+                    string[] files = Directory.GetFiles(LogPath);
+
+                    foreach (string file in files)
+                    {
+                        FileInfo fi = new FileInfo(file);
+                        if (fi.CreationTime < DateTime.Now.AddDays(-autoLogdeletedays))
+                            fi.Delete();
+                    }
+                    Thread.Sleep(600000);
+                    clsLogger.WriteToLogFile("Autolog delete finished.");
+
+                }
+                catch (Exception ex)
+                {
+                    clsLogger.WriteToLogFile("Error during deleting log files : " + ex.Message);
+                }
+
+            }
+
 
 
         }
@@ -157,11 +243,12 @@ namespace HtmlGrabber
                 dataRow["Remark"] = Remark;
                 dataRow["Live Viewers"] = 0;
                 dataRow["Max Viwers"] = 0;
-                dataRow["Status"] = "starting...";
+                dataRow["Status"] = "Starting";
                 dataRow["Refresh Time"] = Convert.ToInt32(RefreshTime);
                 dataRow["Find Regex"] = FindRegex;
                 dataRow["Match"] = found_match;
                 dataRow["Retry Count"] = Retry_Count;
+                dataRow["TStatus"] = "Running";
 
                 dataRow["Website Link"] = WebsiteLink;
                 dtWebsiteList.Rows.Add(dataRow);
@@ -171,11 +258,12 @@ namespace HtmlGrabber
                 HtmlGrabberThread.Start();
                 threadDictionary.Add(Remark, HtmlGrabberThread);
 
+
+
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error during adding data : " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
+                clsLogger.WriteToLogFile("Error during adding data : " + ex.Message);
             }
 
 
@@ -284,17 +372,23 @@ namespace HtmlGrabber
         }
         private void ProcessWebsiteData(string websiteLink, string findRegex, string _match, int RetryCount, string refreshTime, string remark)
         {
+            clsLogger.WriteToLogFile("Processing Website Data Thread Started.");
 
-            while (RetryCount > 0)
+            string Tstatus = dtWebsiteList.AsEnumerable().Where(x => x.Field<string>("Remark") == remark).Select(x => x.Field<string>("TStatus")).FirstOrDefault();
+            int retry_count = RetryCount;
+            while (Tstatus != "Stopped" && Tstatus != "Error")
             {
                 try
                 {
                     DateTime startTime = DateTime.Now;
                     string htmlCode = string.Empty;
+                    clsLogger.WriteToLogFile("Downloading : " + remark + " started.");
+
                     using (WebClient client = new WebClient())
                     {
                         htmlCode = client.DownloadString(websiteLink);
                     }
+                    clsLogger.WriteToLogFile("Downloading : " + remark + " finished.");
 
                     if (!string.IsNullOrEmpty(htmlCode))
                     {
@@ -329,6 +423,7 @@ namespace HtmlGrabber
                         }
                         else
                         {
+                            clsLogger.WriteToLogFile("No result found for : " + remark + ".");
                             Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(remark, "No result found")));
                         }
                     }
@@ -338,38 +433,75 @@ namespace HtmlGrabber
                     {
                         Thread.Sleep(TimeRemain * -1000);
                     }
+                    retry_count = RetryCount;
 
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error during process website data : " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    RetryCount--;
-                    if (RetryCount == 0)
+                    clsLogger.WriteToLogFile("Error during process website data for " + remark + " : " + ex.Message);
+
+                    //MessageBox.Show("Error during process website data : " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    retry_count--;
+                    if (retry_count == 0)
                     {
-                        Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(remark, "inactive")));
+                        Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(remark, "Error")));
+                        Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteTStatus(remark, "Error")));
                     }
                     else
                     {
-                        Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(remark, "checking...")));
+                        Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(remark, "Checking")));
                     }
                 }
-
+                Tstatus = dtWebsiteList.AsEnumerable().Where(x => x.Field<string>("Remark") == remark).Select(x => x.Field<string>("TStatus")).FirstOrDefault();
             }
+        }
+
+        private void UpdateWebsiteTStatus(string remark, string Tstatus)
+        {
+            try
+            {
+                IEnumerable<DataRow> rows = dtWebsiteList.Rows.Cast<DataRow>().Where(r => r["Remark"].ToString().ToLower() == remark.ToLower());
+                // Loop through the rows and change the name.          
+                rows.ToList().ForEach(r => r.SetField("TStatus", Tstatus));
+                dataGridWebsiteList.Items.Refresh();
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during updating website TStatus for " + remark + " : " + ex.Message);
+            }
+
+
         }
 
         private void UpdateWebsiteStatus(string remark, string status)
         {
-            IEnumerable<DataRow> rows = dtWebsiteList.Rows.Cast<DataRow>().Where(r => r["Remark"].ToString().ToLower() == remark.ToLower());
-            // Loop through the rows and change the name.          
-            rows.ToList().ForEach(r => r.SetField("Status", status));
-            dataGridWebsiteList.Items.Refresh();
+            try
+            {
+                IEnumerable<DataRow> rows = dtWebsiteList.Rows.Cast<DataRow>().Where(r => r["Remark"].ToString().ToLower() == remark.ToLower());
+                // Loop through the rows and change the name.          
+                rows.ToList().ForEach(r => r.SetField("Status", status));
+                dataGridWebsiteList.Items.Refresh();
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during updating website status for " + remark + " : " + ex.Message);
+            }
+
+
         }
 
         //https://www.aspsnippets.com/Articles/Calculate-Sum-Total-of-DataTable-Columns-using-C-and-VBNet.aspx
         private void RefreshTotalViewers()
         {
-            int TotalViewers = dtWebsiteList.AsEnumerable().Sum(row => row.Field<int>("Max Viwers"));
-            LbTotalViewers.Content = TotalViewers.ToString();
+            try
+            {
+                int TotalViewers = dtWebsiteList.AsEnumerable().Sum(row => row.Field<int>("Max Viwers"));
+                LbTotalViewers.Content = TotalViewers.ToString();
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during refresh total viewers method " + ex.Message);
+            }
         }
 
         //https://www.codeproject.com/Questions/362011/Find-and-Update-cell-in-DataTable
@@ -381,6 +513,7 @@ namespace HtmlGrabber
                           x.Field<int>("Max Viwers") < LiveViewers).Count();
 
                 //DataRow dr = dtWebsiteList.Select("Remark='" + remark + "'").Max();
+                string Tstatus = dtWebsiteList.AsEnumerable().Where(x => x.Field<string>("Remark").ToLower() == remark.ToLower()).Select(x => x.Field<string>("TStatus")).FirstOrDefault();
                 if (maxViewersFound > 0)
                 {
 
@@ -389,7 +522,9 @@ namespace HtmlGrabber
                     // Loop through the rows and change the name.
                     rows.ToList().ForEach(r => r.SetField("Max Viwers", LiveViewers));
                     rows.ToList().ForEach(r => r.SetField("Live Viewers", LiveViewers));
-                    rows.ToList().ForEach(r => r.SetField("Status", "Active"));
+                    if (Tstatus != "Stopped")
+                        Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(rows.ToList().Select(r => r.Field<string>("Remark")).FirstOrDefault(), "Active")));
+                    //rows.ToList().ForEach(r => r.SetField("Status", "Active"));
                     dataGridWebsiteList.Items.Refresh();
 
                 }
@@ -399,14 +534,16 @@ namespace HtmlGrabber
                     IEnumerable<DataRow> rows = dtWebsiteList.Rows.Cast<DataRow>().Where(r => r["Remark"].ToString().ToLower() == remark.ToLower());
                     // Loop through the rows and change the name.                
                     rows.ToList().ForEach(r => r.SetField("Live Viewers", LiveViewers));
-                    rows.ToList().ForEach(r => r.SetField("Status", "Active"));
+                    //rows.ToList().ForEach(r => r.SetField("Status", "Active"));
+                    if (Tstatus != "Stopped")
+                        Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(rows.ToList().Select(r => r.Field<string>("Remark")).FirstOrDefault(), "Active")));
+
                     dataGridWebsiteList.Items.Refresh();
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error during refreshing website list data : " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                clsLogger.WriteToLogFile("Error during refreshing website list data for : " + remark + " : " + ex.Message);
             }
 
 
@@ -419,8 +556,7 @@ namespace HtmlGrabber
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error during refreshing website grid data : " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                clsLogger.WriteToLogFile("Error during refreshing website grid data :" + ex.Message);
             }
 
 
@@ -434,8 +570,7 @@ namespace HtmlGrabber
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error during refreshing website history data : " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                clsLogger.WriteToLogFile("Error during refreshing website history data :" + ex.Message);
             }
 
         }
@@ -523,147 +658,277 @@ namespace HtmlGrabber
 
         private void BtnClearHistory_Click(object sender, RoutedEventArgs e)
         {
-            dtLiveHistory.Clear();
-            RefreshDataGridHistory();
+            try
+            {
+                dtLiveHistory.Clear();
+                RefreshDataGridHistory();
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during clearing history :" + ex.Message);
+            }
+
+
         }
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            Environment.Exit(Environment.ExitCode);
+            try
+            {
+                Environment.Exit(Environment.ExitCode);
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during window closed event :" + ex.Message);
+            }
+
         }
 
         private void BtnExport_Click(object sender, RoutedEventArgs e)
         {
-            if (dtWebsiteList.Rows.Count > 0)
+            try
             {
-                SaveFileDialog saveFileDialog = new SaveFileDialog();
-                saveFileDialog.Filter = "CSV file (*.csv)|*.csv";
-                if (saveFileDialog.ShowDialog() == true)
+                if (dtWebsiteList.Rows.Count > 0)
                 {
-                    dtWebsiteList.ToCSV(saveFileDialog.FileName);
+                    SaveFileDialog saveFileDialog = new SaveFileDialog();
+                    saveFileDialog.Filter = "CSV file (*.csv)|*.csv";
+                    if (saveFileDialog.ShowDialog() == true)
+                    {
+                        dtWebsiteList.ToCSV(saveFileDialog.FileName);
+                    }
                 }
             }
-
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during exporting data :" + ex.Message);
+            }
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            e.Cancel = MessageBox.Show("Are you sure to exit application?", "Exit Application", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No;
+            try
+            {
+                e.Cancel = MessageBox.Show("Are you sure to exit application?", "Exit Application", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No;
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during window closing event :" + ex.Message);
+            }
         }
         //https://stackoverflow.com/questions/18854395/how-to-delete-rows-from-datatable-with-linq
         private void DataGridWebsiteList_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (sender is DataGrid dg)
+            try
             {
-                DataGridRow dgr = (DataGridRow)dg.ItemContainerGenerator.ContainerFromIndex(dg.SelectedIndex);
-                if (e.Key == Key.Delete && !dgr.IsEditing)
+                if (sender is DataGrid dg)
                 {
-                    // User is attempting to delete the row
-                    var result = MessageBox.Show(
-                        "Are you sure to delete selected website from watch list ?",
-                        "Delete",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Question,
-                        MessageBoxResult.No);
+                    DataGridRow dgr = (DataGridRow)dg.ItemContainerGenerator.ContainerFromIndex(dg.SelectedIndex);
+                    if (e.Key == Key.Delete && !dgr.IsEditing)
+                    {
+                        // User is attempting to delete the row
+                        var result = MessageBox.Show(
+                            "Are you sure to delete selected website from watch list ?",
+                            "Delete",
+                            MessageBoxButton.YesNo,
+                            MessageBoxImage.Question,
+                            MessageBoxResult.No);
 
-                    //((DataRowView)dgr.Item).Row.ItemArray[0];
-                    string Remark = ((DataRowView)dgr.Item).Row.Field<string>("Remark").ToString();
-                    dtWebsiteList.AsEnumerable().Where(x => x.Field<string>("Remark") == Remark).ToList().ForEach(x => x.Delete());
-                    dtLiveHistory.AsEnumerable().Where(x => x.Field<string>("Remark") == Remark).ToList().ForEach(x => x.Delete());
-                    //e.Handled = (result == MessageBoxResult.No);
-                    RefreshDataGridHistory();
-                    RefreshDataGridWebsiteList();
-                    RefreshTotalViewers();
+                        //((DataRowView)dgr.Item).Row.ItemArray[0];
+                        string Remark = ((DataRowView)dgr.Item).Row.Field<string>("Remark").ToString();
+                        dtWebsiteList.AsEnumerable().Where(x => x.Field<string>("Remark") == Remark).ToList().ForEach(x => x.Delete());
+                        dtLiveHistory.AsEnumerable().Where(x => x.Field<string>("Remark") == Remark).ToList().ForEach(x => x.Delete());
+                        //e.Handled = (result == MessageBoxResult.No);
+                        RefreshDataGridHistory();
+                        RefreshDataGridWebsiteList();
+                        RefreshTotalViewers();
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during deleting data :" + ex.Message);
+            }
+
         }
         //https://stackoverflow.com/questions/3286583/how-to-add-context-menu-to-wpf-datagrid
         //https://stackoverflow.com/questions/16822956/getting-wpf-data-grid-context-menu-click-row
         //https://stackoverflow.com/questions/19288845/aborting-a-thread-via-its-name
         private void MenuItem_Delete_Click(object sender, RoutedEventArgs e)
         {
-            //Get the clicked MenuItem
-            var menuItem = (MenuItem)sender;
+            try
+            {
+                //Get the clicked MenuItem
+                var menuItem = (MenuItem)sender;
 
-            //Get the ContextMenu to which the menuItem belongs
-            var contextMenu = (ContextMenu)menuItem.Parent;
+                //Get the ContextMenu to which the menuItem belongs
+                var contextMenu = (ContextMenu)menuItem.Parent;
 
-            //Find the placementTarget
-            var item = (DataGrid)contextMenu.PlacementTarget;
+                //Find the placementTarget
+                var item = (DataGrid)contextMenu.PlacementTarget;
 
-            DataGridRow dgr = (DataGridRow)item.ItemContainerGenerator.ContainerFromIndex(item.SelectedIndex);
+                DataGridRow dgr = (DataGridRow)item.ItemContainerGenerator.ContainerFromIndex(item.SelectedIndex);
 
-            string Remark = ((DataRowView)dgr.Item).Row.Field<string>("Remark").ToString();
+                string Remark = ((DataRowView)dgr.Item).Row.Field<string>("Remark").ToString();
+                //Not supported in dotnet core
+                //threadDictionary[Remark].Abort();
+                Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(Remark, "Stopped")));
+                Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(Remark, "Stopped")));
+                Dispatcher.BeginInvoke(new ThreadStart(() => AbortThreadProcessWebsiteData(Remark)));
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during deleting data :" + ex.Message);
+            }
 
-            threadDictionary[Remark].Abort();
-            threadDictionary.Remove(Remark);
-            dtWebsiteList.AsEnumerable().Where(x => x.Field<string>("Remark") == Remark).ToList().ForEach(x => x.Delete());
-            dtLiveHistory.AsEnumerable().Where(x => x.Field<string>("Remark") == Remark).ToList().ForEach(x => x.Delete());
 
-            RefreshDataGridHistory();
-            RefreshDataGridWebsiteList();
-            RefreshTotalViewers();
+        }
+
+        private void AbortThreadProcessWebsiteData(string Remark)
+        {
+            try
+            {
+                while (threadDictionary[Remark].IsAlive)
+                {
+                    Thread.Sleep(100);
+                }
+                threadDictionary.Remove(Remark);
+                dtWebsiteList.AsEnumerable().Where(x => x.Field<string>("Remark") == Remark).ToList().ForEach(x => x.Delete());
+                dtLiveHistory.AsEnumerable().Where(x => x.Field<string>("Remark") == Remark).ToList().ForEach(x => x.Delete());
+
+                RefreshDataGridHistory();
+                RefreshDataGridWebsiteList();
+                RefreshTotalViewers();
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during aborting thread :" + ex.Message);
+
+            }
+
         }
 
         [Obsolete]
         private void MenuItem_Start_Click(object sender, RoutedEventArgs e)
         {
-            //Get the clicked MenuItem
-            var menuItem = (MenuItem)sender;
+            try
+            {
+                //Get the clicked MenuItem
+                var menuItem = (MenuItem)sender;
 
-            //Get the ContextMenu to which the menuItem belongs
-            var contextMenu = (ContextMenu)menuItem.Parent;
+                //Get the ContextMenu to which the menuItem belongs
+                var contextMenu = (ContextMenu)menuItem.Parent;
 
-            //Find the placementTarget
-            var item = (DataGrid)contextMenu.PlacementTarget;
+                //Find the placementTarget
+                var item = (DataGrid)contextMenu.PlacementTarget;
 
-            DataGridRow dgr = (DataGridRow)item.ItemContainerGenerator.ContainerFromIndex(item.SelectedIndex);
+                DataGridRow dgr = (DataGridRow)item.ItemContainerGenerator.ContainerFromIndex(item.SelectedIndex);
 
-            dtWebsiteList.Columns.Add("Remark", typeof(string));
-            dtWebsiteList.Columns.Add("Live Viewers", typeof(int));
-            dtWebsiteList.Columns.Add("Max Viwers", typeof(int));
-            dtWebsiteList.Columns.Add("Status", typeof(string));
-            dtWebsiteList.Columns.Add("Refresh Time", typeof(int));
-            dtWebsiteList.Columns.Add("Match", typeof(int));
-            dtWebsiteList.Columns.Add("Retry Count", typeof(int));
-            dtWebsiteList.Columns.Add("Website Link", typeof(string));
-            dtWebsiteList.Columns.Add("Find Regex", typeof(string));
+                string Remark = ((DataRowView)dgr.Item).Row.Field<string>("Remark").ToString();
 
-            string Remark = ((DataRowView)dgr.Item).Row.Field<string>("Remark").ToString();
-            string WebsiteLink = ((DataRowView)dgr.Item).Row.Field<string>("Website Link").ToString();
-            string FindRegex = ((DataRowView)dgr.Item).Row.Field<string>("Find Regex").ToString();
-            string Match = ((DataRowView)dgr.Item).Row.Field<string>("Match").ToString();
-            int Retry_Count = Convert.ToInt32(((DataRowView)dgr.Item).Row.Field<string>("Retry Count"));
-            string RefreshTime = ((DataRowView)dgr.Item).Row.Field<string>("Refresh Time").ToString();
+                if (threadDictionary.ContainsKey(Remark))
+                {
+                    if (threadDictionary[Remark].IsAlive)
+                    {
+                        MessageBox.Show("Website is already active.", "Process already running.", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+                }
 
-            Thread HtmlGrabberThread = new Thread(() => ProcessWebsiteData(WebsiteLink, FindRegex, Match, Retry_Count, RefreshTime, Remark));
-            HtmlGrabberThread.Name = Remark;
-            HtmlGrabberThread.Start();
-            threadDictionary.Add(Remark, HtmlGrabberThread);            
-            Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(Remark, "starting...")));
+
+                string WebsiteLink = ((DataRowView)dgr.Item).Row.Field<string>("Website Link").ToString();
+                string FindRegex = ((DataRowView)dgr.Item).Row.Field<string>("Find Regex").ToString();
+                string Match = ((DataRowView)dgr.Item).Row.Field<int>("Match").ToString();
+                int Retry_Count = Convert.ToInt32(((DataRowView)dgr.Item).Row.Field<int>("Retry Count"));
+                string RefreshTime = ((DataRowView)dgr.Item).Row.Field<int>("Refresh Time").ToString();
+                Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteTStatus(Remark, "Running")));
+                Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(Remark, "Starting")));
+
+                Thread.Sleep(1000);
+                Thread HtmlGrabberThread = new Thread(() => ProcessWebsiteData(WebsiteLink, FindRegex, Match, Retry_Count, RefreshTime, Remark));
+                HtmlGrabberThread.Name = Remark;
+                HtmlGrabberThread.Start();
+                threadDictionary.Add(Remark, HtmlGrabberThread);
+
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during starting thread on menu click :" + ex.Message);
+            }
+
         }
 
-        
+
         private void MenuItem_Stop_Click(object sender, RoutedEventArgs e)
         {
-            //Get the clicked MenuItem
-            var menuItem = (MenuItem)sender;
+            try
+            {
+                //Get the clicked MenuItem
+                var menuItem = (MenuItem)sender;
 
-            //Get the ContextMenu to which the menuItem belongs
-            var contextMenu = (ContextMenu)menuItem.Parent;
+                //Get the ContextMenu to which the menuItem belongs
+                var contextMenu = (ContextMenu)menuItem.Parent;
 
-            //Find the placementTarget
-            var item = (DataGrid)contextMenu.PlacementTarget;
+                //Find the placementTarget
+                var item = (DataGrid)contextMenu.PlacementTarget;
 
-            DataGridRow dgr = (DataGridRow)item.ItemContainerGenerator.ContainerFromIndex(item.SelectedIndex);
+                DataGridRow dgr = (DataGridRow)item.ItemContainerGenerator.ContainerFromIndex(item.SelectedIndex);
 
-            string Remark = ((DataRowView)dgr.Item).Row.Field<string>("Remark").ToString();
+                string Remark = ((DataRowView)dgr.Item).Row.Field<string>("Remark").ToString();
 
-            threadDictionary[Remark].Abort();
-            threadDictionary.Remove(Remark);
-                       
-            Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(Remark, "inactive")));
+                //Not supported in dotnet core
+                //threadDictionary[Remark].Abort();
+                threadDictionary.Remove(Remark);
+                Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteTStatus(Remark, "Stopped")));
+                Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(Remark, "Stopped")));
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during stoping thread on menu click :" + ex.Message);
+            }
+
+        }
+        private void MenuItem_Reset_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                //Get the clicked MenuItem
+                var menuItem = (MenuItem)sender;
+
+                //Get the ContextMenu to which the menuItem belongs
+                var contextMenu = (ContextMenu)menuItem.Parent;
+
+                //Find the placementTarget
+                var item = (DataGrid)contextMenu.PlacementTarget;
+
+                DataGridRow dgr = (DataGridRow)item.ItemContainerGenerator.ContainerFromIndex(item.SelectedIndex);
+
+                string Remark = ((DataRowView)dgr.Item).Row.Field<string>("Remark").ToString();
+
+                Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteMaxViweres(Remark)));
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during reseting max count on menu click :" + ex.Message);
+            }
+
         }
 
+        private void UpdateWebsiteMaxViweres(string remark)
+        {
+            try
+            {
+                IEnumerable<DataRow> rows = dtWebsiteList.Rows.Cast<DataRow>().Where(r => r["Remark"].ToString().ToLower() == remark.ToLower());
+                // Loop through the rows and change the name.          
+                rows.ToList().ForEach(r => r.SetField("Max Viwers", 0));
+                dataGridWebsiteList.Items.Refresh();
+            }
+            catch (Exception ex)
+            {
+                clsLogger.WriteToLogFile("Error during updating max viewers of : " + remark + " :" + ex.Message);
+
+
+            }
+
+        }
     }
 }

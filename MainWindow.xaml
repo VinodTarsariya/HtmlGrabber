@@ -36,7 +36,7 @@
                     <TextBox x:Name="txtRetryCount" TextWrapping="Wrap" VerticalContentAlignment="Center" Height="26" Margin="0,0,10,0" Width="120" Text="5"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Height="36" VerticalAlignment="Center" >
-                    <Button x:Name="BtnSave" Content="Add to Watch List" Click="BtnSave_Click" Height="26" Width="138" HorizontalAlignment="Left" Margin="0,0,10,0" />
+                    <Button x:Name="BtnSave" Content="Add to Watch List" Click="BtnSave_Click" Height="26" Width="119" Margin="0,0,10,0" />
                     <Label x:Name="LbStatus" Content="Message" Height="26" Visibility="Hidden"/>
                 </StackPanel>
               
@@ -49,9 +49,10 @@
                     <DataGrid x:Name="dataGridWebsiteList" MinWidth="200" Height="168" PreviewKeyDown="DataGridWebsiteList_PreviewKeyDown" >
                         <DataGrid.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Start" Click="MenuItem_Start_Click"></MenuItem>
-                                <MenuItem Header="Stop" Click="MenuItem_Stop_Click"></MenuItem>
+                                <!--<MenuItem Header="Start" Click="MenuItem_Start_Click"></MenuItem>
+                                <MenuItem Header="Stop" Click="MenuItem_Stop_Click"></MenuItem>-->
                                 <MenuItem Header="Delete" Click="MenuItem_Delete_Click"></MenuItem>                                
+                                <MenuItem Header="Reset" Click="MenuItem_Reset_Click"></MenuItem>                                
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                     </DataGrid>
