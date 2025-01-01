@@ -19,19 +19,19 @@
         <GroupBox Header=" Configure Website " Margin="10,43,10,0" Grid.RowSpan="2">
             <StackPanel>
                 <Label Content="Website Link : "/>
-                <TextBox x:Name="txtWebsiteLink" TextWrapping="Wrap" Height="26" VerticalContentAlignment="Center" Text="https://xyzabc.com"/>
+                <TextBox x:Name="txtWebsiteLink" TextWrapping="Wrap" Height="26" VerticalContentAlignment="Center" Text="https://www.youtube.com/watch?v=yXuWCf_gZUw"/>
                 <Label Content="Remark : " RenderTransformOrigin="0.102,0.502"/>
                 <TextBox x:Name="txtRemark" TextWrapping="Wrap" Height="26" VerticalContentAlignment="Center" Text="Katha"/>
 
                 <Label Content="Find Regex : "/>
-                <TextBox x:Name="txtFindRegex" TextWrapping="Wrap" Height="26" VerticalContentAlignment="Center" Text="(\{\\\&quot;viewCount\\\&quot;:\{\\\&quot;runs\\\&quot;:\[\{\\\&quot;text\\\&quot;:\\\&quot;)(\d+.*)( watching now\\\&quot;\}\]\},\\\&quot;isLive\\\&quot;:true})"/>
+                <TextBox x:Name="txtFindRegex" TextWrapping="Wrap" Height="26" VerticalContentAlignment="Center" Text="&quot;originalViewCount&quot;:&quot;(\d+)&quot;" />
                 <StackPanel Height="26" Orientation="Horizontal">
                     <Label Content="Match : " Height="26" Width="125"/>
                     <Label Content="Refresh Time : " Height="26" Width="125"/>
                     <Label Content="Retry Count : " Height="26" Width="125"/>
                 </StackPanel>
                 <StackPanel Height="36" Orientation="Horizontal">
-                    <TextBox x:Name="txtMatch" TextWrapping="Wrap" VerticalContentAlignment="Center" Height="26" Margin="0,0,10,0" Width="120" Text="2"/>
+                    <TextBox x:Name="txtMatch" TextWrapping="Wrap" VerticalContentAlignment="Center" Height="26" Margin="0,0,10,0" Width="120" Text="1"/>
                     <TextBox x:Name="txtRefreshTime" TextWrapping="Wrap" VerticalContentAlignment="Center" Height="26" Margin="0,0,10,0" Width="120" Text="5"/>
                     <TextBox x:Name="txtRetryCount" TextWrapping="Wrap" VerticalContentAlignment="Center" Height="26" Margin="0,0,10,0" Width="120" Text="5"/>
                 </StackPanel>

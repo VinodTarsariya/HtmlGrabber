@@ -1,21 +1,19 @@
-﻿using HtmlGrabber.Models;
+﻿using DataTableExport;
+using HtmlGrabber.Models;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
-using System.Linq;
-using System.Globalization;
-using System.Windows.Data;
-using DataTableExport;
-using Microsoft.Win32;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
-using System.Threading.Tasks;
 
 namespace HtmlGrabber
 {
@@ -30,11 +28,12 @@ namespace HtmlGrabber
         private static DataTable dtWebsiteList = new DataTable();
         private static bool isWebsiteLinkCheckingTaskRunning = false;
         private static bool isRightWebsiteLink = false;
-        Dictionary<string, Thread> threadDictionary = new Dictionary<string, Thread>();
+        private Dictionary<string, Thread> threadDictionary = new Dictionary<string, Thread>();
         private static int autoLogdeletedays = 7;
         private static bool isAutoLogdeleteEnable = true;
         private static bool isAutoLogSaveEnable = true;
         private ErrorHandle clsLogger = new ErrorHandle();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -67,18 +66,12 @@ namespace HtmlGrabber
                 AutoLogSaveThread.Name = "AutoLogSave";
                 AutoLogSaveThread.Start();
                 clsLogger.WriteToLogFile("Initialization of Main Window Finished.");
-
             }
             catch (Exception ex)
             {
                 clsLogger.WriteToLogFile("Error in initialization of Main Window : " + ex.Message);
-
             }
-
-
         }
-
-
 
         private void AutoLogSave()
         {
@@ -99,16 +92,12 @@ namespace HtmlGrabber
                     }
                     Thread.Sleep(300000);
                     clsLogger.WriteToLogFile("Autolog saving finished.");
-
                 }
                 catch (Exception ex)
                 {
                     clsLogger.WriteToLogFile("Error during auto log saving: " + ex.Message);
                 }
-
             }
-
-
         }
 
         private void DeleteLog()
@@ -129,17 +118,12 @@ namespace HtmlGrabber
                     }
                     Thread.Sleep(600000);
                     clsLogger.WriteToLogFile("Autolog delete finished.");
-
                 }
                 catch (Exception ex)
                 {
                     clsLogger.WriteToLogFile("Error during deleting log files : " + ex.Message);
                 }
-
             }
-
-
-
         }
 
         //private async void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -222,7 +206,6 @@ namespace HtmlGrabber
                     }
                 }
 
-
                 //try
                 //{
                 //    // run a method in another thread
@@ -257,16 +240,11 @@ namespace HtmlGrabber
                 HtmlGrabberThread.Name = Remark;
                 HtmlGrabberThread.Start();
                 threadDictionary.Add(Remark, HtmlGrabberThread);
-
-
-
             }
             catch (Exception ex)
             {
                 clsLogger.WriteToLogFile("Error during adding data : " + ex.Message);
             }
-
-
         }
 
         //https://stackoverflow.com/questions/27089263/how-to-run-and-interact-with-an-async-task-from-a-wpf-gui
@@ -274,7 +252,6 @@ namespace HtmlGrabber
         {
             try
             {
-
                 isWebsiteLinkCheckingTaskRunning = true;
                 //Dispatcher.BeginInvoke(new ThreadStart(() => UpdateLbStatus()));
                 //Dispatcher.BeginInvoke(new ThreadStart(() => CheckWebsite(WebsiteLink)));
@@ -299,8 +276,6 @@ namespace HtmlGrabber
 
                 return false;
             }
-
-
         }
 
         private void UpdateLbStatus()
@@ -370,6 +345,7 @@ namespace HtmlGrabber
             Regex reg = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
             return reg.IsMatch(url);
         }
+
         private void ProcessWebsiteData(string websiteLink, string findRegex, string _match, int RetryCount, string refreshTime, string remark)
         {
             clsLogger.WriteToLogFile("Processing Website Data Thread Started.");
@@ -409,7 +385,6 @@ namespace HtmlGrabber
                                 dataRow["Date_Time"] = DateTime.Now;
                                 dtLiveHistory.Rows.Add(dataRow);
 
-
                                 //Dispatcher.Invoke(() =>
                                 //{
                                 //DataGridHistory.ItemsSource = dtLiveHistory.DefaultView;
@@ -418,7 +393,6 @@ namespace HtmlGrabber
                                 Dispatcher.BeginInvoke(new ThreadStart(() => RefreshDataGridHistory()));
                                 Dispatcher.BeginInvoke(new ThreadStart(() => RefreshDataGridWebsiteList(remark, LiveViewers)));
                                 Dispatcher.BeginInvoke(new ThreadStart(() => RefreshTotalViewers()));
-
                             }
                         }
                         else
@@ -434,7 +408,6 @@ namespace HtmlGrabber
                         Thread.Sleep(TimeRemain * -1000);
                     }
                     retry_count = RetryCount;
-
                 }
                 catch (Exception ex)
                 {
@@ -469,8 +442,6 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during updating website TStatus for " + remark + " : " + ex.Message);
             }
-
-
         }
 
         private void UpdateWebsiteStatus(string remark, string status)
@@ -486,8 +457,6 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during updating website status for " + remark + " : " + ex.Message);
             }
-
-
         }
 
         //https://www.aspsnippets.com/Articles/Calculate-Sum-Total-of-DataTable-Columns-using-C-and-VBNet.aspx
@@ -516,7 +485,6 @@ namespace HtmlGrabber
                 string Tstatus = dtWebsiteList.AsEnumerable().Where(x => x.Field<string>("Remark").ToLower() == remark.ToLower()).Select(x => x.Field<string>("TStatus")).FirstOrDefault();
                 if (maxViewersFound > 0)
                 {
-
                     // Get all DataRows where the name is the name you want.
                     IEnumerable<DataRow> rows = dtWebsiteList.Rows.Cast<DataRow>().Where(r => r["Remark"].ToString().ToLower() == remark.ToLower());
                     // Loop through the rows and change the name.
@@ -526,7 +494,6 @@ namespace HtmlGrabber
                         Dispatcher.BeginInvoke(new ThreadStart(() => UpdateWebsiteStatus(rows.ToList().Select(r => r.Field<string>("Remark")).FirstOrDefault(), "Active")));
                     //rows.ToList().ForEach(r => r.SetField("Status", "Active"));
                     dataGridWebsiteList.Items.Refresh();
-
                 }
                 else
                 {
@@ -545,9 +512,8 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during refreshing website list data for : " + remark + " : " + ex.Message);
             }
-
-
         }
+
         private void RefreshDataGridWebsiteList()
         {
             try
@@ -558,9 +524,8 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during refreshing website grid data :" + ex.Message);
             }
-
-
         }
+
         private void RefreshDataGridHistory()
         {
             try
@@ -572,7 +537,6 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during refreshing website history data :" + ex.Message);
             }
-
         }
 
         private void HtmlGrabberSample()
@@ -585,7 +549,6 @@ namespace HtmlGrabber
                 htmlCode = client.DownloadString("https://www.youtube.com/watch?v=CZS9vk-Sa8A");
             }
 
-
             if (!string.IsNullOrEmpty(htmlCode))
             {
                 if (Regex.IsMatch(htmlCode, FindRegex, RegexOptions.Multiline))
@@ -594,9 +557,9 @@ namespace HtmlGrabber
                     string LiveViewers = match.Groups[2].Value.ToString();
                     MessageBox.Show("Live Viewers Count  : " + LiveViewers);
                 }
-
             }
         }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             //BindGridData();
@@ -651,7 +614,6 @@ namespace HtmlGrabber
             //}
             //catch (Exception)
             //{
-
             //    throw;
             //}
         }
@@ -667,8 +629,6 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during clearing history :" + ex.Message);
             }
-
-
         }
 
         private void Window_Closed(object sender, EventArgs e)
@@ -681,7 +641,6 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during window closed event :" + ex.Message);
             }
-
         }
 
         private void BtnExport_Click(object sender, RoutedEventArgs e)
@@ -715,6 +674,7 @@ namespace HtmlGrabber
                 clsLogger.WriteToLogFile("Error during window closing event :" + ex.Message);
             }
         }
+
         //https://stackoverflow.com/questions/18854395/how-to-delete-rows-from-datatable-with-linq
         private void DataGridWebsiteList_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
@@ -748,8 +708,8 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during deleting data :" + ex.Message);
             }
-
         }
+
         //https://stackoverflow.com/questions/3286583/how-to-add-context-menu-to-wpf-datagrid
         //https://stackoverflow.com/questions/16822956/getting-wpf-data-grid-context-menu-click-row
         //https://stackoverflow.com/questions/19288845/aborting-a-thread-via-its-name
@@ -779,8 +739,6 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during deleting data :" + ex.Message);
             }
-
-
         }
 
         private void AbortThreadProcessWebsiteData(string Remark)
@@ -802,9 +760,7 @@ namespace HtmlGrabber
             catch (Exception ex)
             {
                 clsLogger.WriteToLogFile("Error during aborting thread :" + ex.Message);
-
             }
-
         }
 
         [Obsolete]
@@ -834,7 +790,6 @@ namespace HtmlGrabber
                     }
                 }
 
-
                 string WebsiteLink = ((DataRowView)dgr.Item).Row.Field<string>("Website Link").ToString();
                 string FindRegex = ((DataRowView)dgr.Item).Row.Field<string>("Find Regex").ToString();
                 string Match = ((DataRowView)dgr.Item).Row.Field<int>("Match").ToString();
@@ -848,15 +803,12 @@ namespace HtmlGrabber
                 HtmlGrabberThread.Name = Remark;
                 HtmlGrabberThread.Start();
                 threadDictionary.Add(Remark, HtmlGrabberThread);
-
             }
             catch (Exception ex)
             {
                 clsLogger.WriteToLogFile("Error during starting thread on menu click :" + ex.Message);
             }
-
         }
-
 
         private void MenuItem_Stop_Click(object sender, RoutedEventArgs e)
         {
@@ -885,8 +837,8 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during stoping thread on menu click :" + ex.Message);
             }
-
         }
+
         private void MenuItem_Reset_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -910,7 +862,6 @@ namespace HtmlGrabber
             {
                 clsLogger.WriteToLogFile("Error during reseting max count on menu click :" + ex.Message);
             }
-
         }
 
         private void UpdateWebsiteMaxViweres(string remark)
@@ -925,10 +876,7 @@ namespace HtmlGrabber
             catch (Exception ex)
             {
                 clsLogger.WriteToLogFile("Error during updating max viewers of : " + remark + " :" + ex.Message);
-
-
             }
-
         }
     }
 }
